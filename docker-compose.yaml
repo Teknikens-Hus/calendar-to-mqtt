@@ -1,0 +1,8 @@
+services:
+  calendar-to-mqtt:
+    build: .
+    environment:
+      TZ: "Europe/Stockholm"
+    volumes:
+      - ./config.yaml:/config.yaml
+    restart: no
