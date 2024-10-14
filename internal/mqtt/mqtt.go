@@ -29,7 +29,7 @@ func NewClient() (MQTTClient, error) {
 
 	// Set authentication if username and password is provided
 	if mqttconf.Username != "" {
-		fmt.Println("Setting username and password")
+		fmt.Println("MQTT: Using Authentication. Username: ", mqttconf.Username)
 		opts.SetPassword(mqttconf.Password)
 		opts.SetUsername(mqttconf.Username)
 	}
@@ -40,25 +40,25 @@ func NewClient() (MQTTClient, error) {
 
 	// Log events
 	opts.OnConnectionLost = func(cl paho.Client, err error) {
-		fmt.Println("MQTT Connection lost")
+		fmt.Println("MQTT: Connection lost")
 	}
 	opts.OnConnect = func(paho.Client) {
-		fmt.Println("MQTT Connection established")
+		fmt.Println("MQTT: Connection established")
 	}
 	opts.OnReconnecting = func(paho.Client, *paho.ClientOptions) {
-		fmt.Println("Attempting to reconnect to MQTT...")
+		fmt.Println("MQTT: Attempting to reconnect...")
 	}
 
 	//
 	// Connect to the broker
 	//
 	client := paho.NewClient(opts)
-	fmt.Println("Connecting to MQTT broker")
+	fmt.Println("MQTT: Connecting to broker at", mqttconf.ServerAddress)
 
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		panic(token.Error())
 	}
-	fmt.Println("MQTT Connection is up")
+	fmt.Println("MQTT: Connection is up")
 
 	// Return the client and the QoS level + error
 	return MQTTClient{client, mqttconf.QoS, mqttconf.ClientID}, nil
@@ -69,5 +69,5 @@ func Publish(client MQTTClient, topic string, payload string, retain bool) {
 	topic = client.ClientID + "/" + topic
 	token := client.paho.Publish(topic, byte(client.QoS), retain, payload)
 	token.Wait()
-	fmt.Printf("Published %s to topic: %s\n", payload, topic)
+	fmt.Printf("MQTT: Published %s to topic: %s\n", payload, topic)
 }

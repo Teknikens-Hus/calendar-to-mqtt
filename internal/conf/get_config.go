@@ -29,15 +29,15 @@ type ConfigFile struct {
 }
 
 func GetMQTTConfig() *MQTTConfig {
-	fmt.Println("Getting MQTT Config")
+	fmt.Println("Conf: Getting MQTT Config...")
 	config, err := readConf()
 	if err != nil {
-		log.Fatalf("Error reading config file: %v", err)
+		log.Fatalf("Conf: Error reading config file: %v", err)
 	}
-	fmt.Println("Creating MQTT Config")
 	if config.MQTT.BrokerIP == "" {
-		log.Fatalf("BrokerIP is not set in the config file")
+		log.Fatalf("Conf: BrokerIP is not set in the config file")
 	}
+	fmt.Println("Conf: Retrieved MQTT Configuration!")
 	// Create MQTT Config from the config file
 	return &MQTTConfig{
 		ServerAddress: config.MQTT.BrokerIP,
@@ -51,8 +51,8 @@ func GetMQTTConfig() *MQTTConfig {
 
 func readConf() (*ConfigFile, error) {
 	// The config file should be created in the root of the project
-	fmt.Println("Reading config file")
 	const filename = "config.yaml"
+	fmt.Println("Conf: Reading config file: " + filename)
 	buf, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
