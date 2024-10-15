@@ -16,12 +16,17 @@ MQTT:
   Password: "password"
   QoS: 1
   Log: true
+
+ICS:
+  - Name: "Name Of Calendar"
+    URL: "https://outlook.office365.com/owa/calendar/exammple@example.se/example/calendar.ics"
+    Interval: 30
 ```
 If you dont use authentication to MQTT, just leave the username an empty string and it will be skipped.
 
 ## Supported Calendars
 Currently, the following calendars are supported:
-- None. TBC
+- ICS
 
 
 ## Development

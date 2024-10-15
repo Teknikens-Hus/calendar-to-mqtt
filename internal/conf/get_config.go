@@ -3,6 +3,7 @@ package conf
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -26,6 +27,13 @@ type ConfigFile struct {
 		QoS      int    `yaml:"QoS"`
 		Log      bool   `yaml:"Log"`
 	} `yaml:"MQTT"`
+	ICS []ICSConfig `yaml:"ICS"`
+}
+
+type ICSConfig struct {
+	Name     string `yaml:"Name"`
+	URL      string `yaml:"URL"`
+	Interval int    `yaml:"Interval"`
 }
 
 func GetMQTTConfig() *MQTTConfig {
@@ -49,20 +57,60 @@ func GetMQTTConfig() *MQTTConfig {
 	}
 }
 
+func GetICSConfig() *[]ICSConfig {
+	fmt.Println("Conf: Getting ICS Config...")
+	config, err := readConf()
+	if err != nil {
+		log.Fatalf("Conf: Error reading config file: %v", err)
+	}
+	if len(config.ICS) == 0 {
+		log.Fatalf("Conf: No ICS files found in the config file")
+	}
+	fmt.Println("Conf: Retrieved ICS Configuration!")
+	// Valid check all values for null
+	for _, ics := range config.ICS {
+		if ics.Name == "" {
+			log.Fatalf("Conf: Name is missing in one ICS in the config file")
+		}
+		if ics.URL == "" {
+			log.Fatalf("Conf: URL is missing in one ICS in the config file")
+		}
+		if ics.Interval == 0 {
+			log.Fatalf("Conf: Interval misisng in one ICS in the config file")
+		}
+	}
+	// Create ICS Config from the config file
+	return &config.ICS
+}
+
+var (
+	config     *ConfigFile
+	configOnce sync.Once
+)
+
 func readConf() (*ConfigFile, error) {
-	// The config file should be created in the root of the project
-	const filename = "config.yaml"
-	fmt.Println("Conf: Reading config file: " + filename)
-	buf, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, err
+	configOnce.Do(func() {
+		// The config file should be created in the root of the project
+		const filename = "config.yaml"
+		fmt.Println("Conf: Reading config file: " + filename)
+		buf, err := os.ReadFile(filename)
+		if err != nil {
+			return
+		}
+
+		configPointer := &ConfigFile{}
+		err = yaml.Unmarshal(buf, configPointer)
+		if err != nil {
+			config = nil
+			return
+		}
+
+		config = configPointer
+	})
+
+	if config == nil {
+		return nil, fmt.Errorf("config file not found")
 	}
 
-	configPointer := &ConfigFile{}
-	err = yaml.Unmarshal(buf, configPointer)
-	if err != nil {
-		return nil, fmt.Errorf("in file %q: %v", filename, err)
-	}
-
-	return configPointer, nil
+	return config, nil
 }
