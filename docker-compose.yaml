@@ -5,4 +5,4 @@ services:
       TZ: "Europe/Stockholm"
     volumes:
       - ./config.yaml:/config.yaml
-    restart: no
+    restart: unless-stopped
