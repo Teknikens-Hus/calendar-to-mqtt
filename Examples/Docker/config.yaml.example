@@ -1,0 +1,16 @@
+MQTT:
+  BrokerIP: "tcp://xxx.xxx.xx.xxx:1883"
+  ClientID: "calendar-to-mqtt"
+  Username: "username"
+  Password: "password"
+  QoS: 1
+  Log: true
+
+ICS:
+  - Name: "Name Of Calendar 1"
+    URL: "https://outlook.office365.com/owa/calendar/exammple@example.se/example/calendar1.ics"
+    Interval: 60
+
+  - Name: "Name Of Calendar 2"
+    URL: "https://outlook.office365.com/owa/calendar/exammple@example.se/example/calendar2.ics"
+    Interval: 60

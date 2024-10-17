@@ -42,8 +42,10 @@ func NewClient() (MQTTClient, error) {
 	opts.OnConnectionLost = func(cl paho.Client, err error) {
 		fmt.Println("MQTT: Connection lost")
 	}
-	opts.OnConnect = func(paho.Client) {
+	opts.OnConnect = func(cl paho.Client) {
 		fmt.Println("MQTT: Connection established")
+		client	:= MQTTClient{cl, mqttconf.QoS, mqttconf.ClientID}
+		Publish(client, "Status", "Connected", false)
 	}
 	opts.OnReconnecting = func(paho.Client, *paho.ClientOptions) {
 		fmt.Println("MQTT: Attempting to reconnect...")
@@ -58,7 +60,6 @@ func NewClient() (MQTTClient, error) {
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		panic(token.Error())
 	}
-	fmt.Println("MQTT: Connection is up")
 
 	// Return the client and the QoS level + error
 	return MQTTClient{client, mqttconf.QoS, mqttconf.ClientID}, nil

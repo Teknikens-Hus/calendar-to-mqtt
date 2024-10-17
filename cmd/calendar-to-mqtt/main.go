@@ -33,7 +33,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error connecting to MQTT broker: %v", err)
 	}
-	mqtt.Publish(mqttClient, "testTopic", "Hello World!", false)
 
 	ics.SetupICS(&mqttClient)
 

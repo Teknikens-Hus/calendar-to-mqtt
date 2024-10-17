@@ -57,14 +57,16 @@ func GetMQTTConfig() *MQTTConfig {
 	}
 }
 
-func GetICSConfig() *[]ICSConfig {
+func GetICSConfig() (*[]ICSConfig, error) {
 	fmt.Println("Conf: Getting ICS Config...")
 	config, err := readConf()
 	if err != nil {
-		log.Fatalf("Conf: Error reading config file: %v", err)
+		log.Error("Conf: Error reading config file: %v", err)
+		return nil, err
 	}
 	if len(config.ICS) == 0 {
-		log.Fatalf("Conf: No ICS files found in the config file")
+		log.Info("Conf: No ICS configurations found in the config file")
+		return nil, nil
 	}
 	fmt.Println("Conf: Retrieved ICS Configuration!")
 	// Valid check all values for null
@@ -80,7 +82,7 @@ func GetICSConfig() *[]ICSConfig {
 		}
 	}
 	// Create ICS Config from the config file
-	return &config.ICS
+	return &config.ICS, nil
 }
 
 var (

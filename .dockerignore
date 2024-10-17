@@ -1,6 +1,7 @@
 # env file
-.env
+**.env
 
 **config.yaml
 **.ics
+docker-compose.yaml
 .gitignore

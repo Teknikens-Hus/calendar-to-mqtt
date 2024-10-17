@@ -1,0 +1,8 @@
+services:
+  calendar-to-mqtt:
+    image: ghcr.io/teknikens-hus/calendar-to-mqtt:latest
+    environment:
+      TZ: "Europe/Stockholm"
+    volumes:
+      - ./config.yaml:/config.yaml
+    restart: unless-stopped

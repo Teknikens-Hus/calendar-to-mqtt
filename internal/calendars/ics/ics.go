@@ -11,21 +11,6 @@ import (
 	"github.com/apognu/gocal"
 )
 
-type CalendarEvent struct {
-	UID      string
-	SUMMARY  string
-	DTSTART  time.Time
-	DTEND    time.Time
-	RRULE    string
-	CLASS    string
-	PRIORITY int
-	DTSTAMP  string // Maybe time?  20241011T130109Z
-	TRANSP   string // OPAQUE etc
-	STATUS   string // CONFIRMED etc
-	SEQUENCE int    // 0
-	LOCATION string
-}
-
 type EventData struct {
 	Summary string `json:"summary"`
 	Start   string `json:"start"`
@@ -108,7 +93,16 @@ func getCalendarEvents(url string, name string, start, end time.Time, client *mq
 }
 
 func SetupICS(client *mqtt.MQTTClient) {
-	icsConf := conf.GetICSConfig()
+	icsConf, err := conf.GetICSConfig()
+	if err != nil {
+		fmt.Println("ICS: Error setting up ICS: ", err)
+		return
+	}
+
+	if icsConf == nil {
+		fmt.Println("ICS: No ICS configurations found in the config file")
+		return
+	}
 
 	// Calculate the first and last day of the current month
 	now := time.Now()
