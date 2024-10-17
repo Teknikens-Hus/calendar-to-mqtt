@@ -41,7 +41,7 @@ spec:
             runAsUser: 1001
             runAsGroup: 2001
             fsGroup: 2001
-      Volumes:
+      volumes:
         - name: config-volume
           configMap:
             name: config-configmap
