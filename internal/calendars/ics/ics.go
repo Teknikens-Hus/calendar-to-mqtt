@@ -1,21 +1,16 @@
 package ical
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/Teknikens-Hus/calendar-to-mqtt/internal/calendars/tools"
 	"github.com/Teknikens-Hus/calendar-to-mqtt/internal/conf"
 	"github.com/Teknikens-Hus/calendar-to-mqtt/internal/mqtt"
 	"github.com/apognu/gocal"
+	log "github.com/sirupsen/logrus"
 )
-
-type EventData struct {
-	Summary string `json:"summary"`
-	Start   string `json:"start"`
-	End     string `json:"end"`
-}
 
 func fetchAndParseICS(url string, start, end time.Time) (*gocal.Gocal, error) {
 	resp, err := http.Get(url)
@@ -29,67 +24,56 @@ func fetchAndParseICS(url string, start, end time.Time) (*gocal.Gocal, error) {
 	}
 
 	calendar := gocal.NewParser(resp.Body)
+
+	// Here we can map the timezone IDs from the ICS file to the Go time.Location
+	// This is useful if yourtimezone cant be resolved by Go
+	var tzMapping = map[string]string{
+		"W. Europe Standard Time": "Europe/Stockholm",
+	}
+	gocal.SetTZMapper(func(s string) (*time.Location, error) {
+		if tzid, ok := tzMapping[s]; ok {
+			return time.LoadLocation(tzid)
+		}
+		return nil, fmt.Errorf("")
+	})
+	// Set the start and end date for the calendar parser (Which event dates to parse)
 	calendar.Start, calendar.End = &start, &end
 	err = calendar.Parse()
 	if err != nil {
 		return nil, fmt.Errorf("ICS: Failed to parse calendar: %w", err)
 	}
-
 	return calendar, nil
 }
 
-func getCalendarEvents(url string, name string, start, end time.Time, client *mqtt.MQTTClient) error {
-	fmt.Println("ICS: Getting Calendar Events for ", name)
+func getICSEvents(url string, start, end time.Time) ([]tools.CalendarEvent, error) {
 	calendar, err := fetchAndParseICS(url, start, end)
 	if err != nil {
-		return fmt.Errorf("ICS: Failed to fetch and parse ICS: %w", err)
+		return nil, fmt.Errorf("ICS: Failed to fetch and parse ICS: %w", err)
 	}
-
-	fmt.Println("ICS: Found ", len(calendar.Events), " events in ", name)
-	now := time.Now()
-	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	todayEnd := todayStart.Add(24*time.Hour - 1)
-	fmt.Println("ICS: Today Start: ", todayStart)
-	fmt.Println("ICS: Today End: ", todayEnd)
-
-	var todayEvents []gocal.Event
+	// Convert the gocal events to our own CalendarEvent struct
+	var events []tools.CalendarEvent
 	for _, event := range calendar.Events {
-		if event.Start.After(todayStart) && event.Start.Before(todayEnd) {
-			todayEvents = append(todayEvents, event)
+		events = append(events, tools.CalendarEvent{
+			Summary:    event.Summary,
+			Start:      *event.Start,
+			End:        *event.End,
+			Reacurring: event.IsRecurring,
+			UID:        event.Uid,
+		})
+
+		if event.IsRecurring {
+			fmt.Println("ICS: Recurring event: ", event.Summary)
+			fmt.Println("ICS: Recurring exclude date num: ", len(event.ExcludeDates))
+			/*
+				for _, excludedDate := range event.ExcludeDates {
+					fmt.Println("ICS: Excluded date: ", excludedDate)
+				}
+				fmt.Printf("ICS: Recurring rule: %s \n %s \n UID: %s", event.RecurrenceID, event.RecurrenceRule, event.Uid)
+			*/
 		}
+
 	}
-
-	fmt.Println("ICS: Events for today:")
-	for _, event := range todayEvents {
-		fmt.Printf("ICS: %s on %s Location: %s", event.Summary, event.Start, event.Location)
-		fmt.Println()
-	}
-	fmt.Println()
-
-	if len(todayEvents) == 0 {
-		topic := fmt.Sprintf(name + "/today/events")
-		fmt.Println("ICS: No events for today")
-		mqtt.Publish(*client, topic, "[]", false)
-		return nil
-	} else {
-		var eventsData []EventData
-		for _, event := range todayEvents {
-			eventsData = append(eventsData, EventData{
-				Summary: event.Summary,
-				Start:   event.Start.Format("15:04"),
-				End:     event.End.Format("15:04"),
-			})
-		}
-		eventsJSON, err := json.Marshal(eventsData)
-		if err != nil {
-			return fmt.Errorf("ICS: Failed to marshal event data: %w", err)
-		}
-		topic := fmt.Sprintf(name + "/today/events")
-		mqtt.Publish(*client, topic, string(eventsJSON), false)
-	}
-
-	return nil
-
+	return events, nil
 }
 
 func SetupICS(client *mqtt.MQTTClient) {
@@ -127,7 +111,13 @@ func SetupICS(client *mqtt.MQTTClient) {
 				select {
 				case <-ticker.C:
 					//fmt.Println("ICS: Ticker ticked at ", t)
-					getCalendarEvents(ics.URL, ics.Name, start, end, client)
+					events, err := getICSEvents(ics.URL, start, end)
+					if err != nil {
+						log.Error("ICS: Error getting ICS events: ", err)
+					} else {
+						fmt.Printf("ICS: Found %d events in %s for date %s to %s \n", len(events), ics.Name, start.Format("2006-01-02"), end.Format("2006-01-02"))
+						tools.PublishCalendarEvents(*client, ics.Name, events)
+					}
 				}
 			}
 		}()

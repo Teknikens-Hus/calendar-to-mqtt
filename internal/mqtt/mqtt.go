@@ -44,7 +44,7 @@ func NewClient() (MQTTClient, error) {
 	}
 	opts.OnConnect = func(cl paho.Client) {
 		fmt.Println("MQTT: Connection established")
-		client	:= MQTTClient{cl, mqttconf.QoS, mqttconf.ClientID}
+		client := MQTTClient{cl, mqttconf.QoS, mqttconf.ClientID}
 		Publish(client, "Status", "Connected", false)
 	}
 	opts.OnReconnecting = func(paho.Client, *paho.ClientOptions) {

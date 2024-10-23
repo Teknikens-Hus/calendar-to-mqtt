@@ -56,7 +56,9 @@ If you are having issues, check the logs of the application/container. It should
 | Interval   | The interval in seconds at which the calendar is fetched.                   | `60`                                   |
 
 ## MQTT Published topics
-The topic format is: _ClientID/ICS - Name/today/events_
+The topic format is:
+- _ClientID/ICS - Name/today/all/events_
+- _ClientID/ICS - Name/today/upcoming/events_
 
 At the topic an array of json objects are published with the events for today.
 #### Example:
@@ -75,9 +77,14 @@ ICS:
     URL: "https://outlook.office365.com/xxxxx.ics"
     Interval: 60
 ```
-The topic then becomes: _great-success/Room 1/today/events_
+The topics then becomes:
+  - _great-success/Room 1/today/all/events_
+  - _great-success/Room 1/today/upcoming/events_
 
-And with a payload like:
+All events contains all events for today.
+Upcoming events contains all events minus the ones that have already passed.
+
+A payload might look like:
 ```json
 [
   {
