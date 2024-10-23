@@ -61,7 +61,7 @@ func GetICSConfig() (*[]ICSConfig, error) {
 	fmt.Println("Conf: Getting ICS Config...")
 	config, err := readConf()
 	if err != nil {
-		log.Error("Conf: Error reading config file: %v", err)
+		log.Error("Conf: Error reading config file: %w", err)
 		return nil, err
 	}
 	if len(config.ICS) == 0 {
@@ -77,7 +77,7 @@ func GetICSConfig() (*[]ICSConfig, error) {
 		if ics.URL == "" {
 			log.Fatalf("Conf: URL is missing in one ICS in the config file")
 		}
-		if ics.Interval == 0 {
+		if ics.Interval == 0 || ics.Interval < 0 {
 			log.Fatalf("Conf: Interval misisng in one ICS in the config file")
 		}
 	}
