@@ -65,17 +65,6 @@ func getICSEvents(url string, start, end time.Time) ([]tools.CalendarEvent, erro
 			UID:        event.Uid,
 		})
 
-		if event.IsRecurring {
-			fmt.Println("ICS: Recurring event: ", event.Summary)
-			fmt.Println("ICS: Recurring exclude date num: ", len(event.ExcludeDates))
-			/*
-				for _, excludedDate := range event.ExcludeDates {
-					fmt.Println("ICS: Excluded date: ", excludedDate)
-				}
-				fmt.Printf("ICS: Recurring rule: %s \n %s \n UID: %s", event.RecurrenceID, event.RecurrenceRule, event.Uid)
-			*/
-		}
-
 	}
 	return events, nil
 }

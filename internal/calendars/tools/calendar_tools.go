@@ -3,6 +3,7 @@ package tools
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/Teknikens-Hus/calendar-to-mqtt/internal/mqtt"
@@ -50,7 +51,7 @@ func filterEventsToday(events []CalendarEvent) []CalendarEvent {
 	for _, event := range events {
 		if event.Start.After(todayStart) && event.Start.Before(todayEnd) {
 			todayEvents = append(todayEvents, event)
-			fmt.Printf("Cal Tools: Added: %s \n Start Time: %s \n Reaccuring: %t \n UID: %s \n", event.Summary, event.Start, event.Reacurring, event.UID)
+			//fmt.Printf("Cal Tools: Added: %s \n Start Time: %s \n Reaccuring: %t \n UID: %s \n", event.Summary, event.Start, event.Reacurring, event.UID)
 		}
 	}
 	return todayEvents
@@ -81,6 +82,14 @@ func filterOutdatedTodayEvents(events []CalendarEvent) []CalendarEvent {
 	return todayFilteredEvents
 }
 
+func sortEvents(events []CalendarEvent) []CalendarEvent {
+	// Sort events by start time using the built in sort package
+	sort.Slice(events, func(i, j int) bool {
+		return events[i].Start.Before(events[j].Start)
+	})
+	return events
+}
+
 func getErrorJSON() string {
 	eventsData := []EventData{
 		{
@@ -109,6 +118,10 @@ func PublishCalendarEvents(client mqtt.MQTTClient, name string, events []Calenda
 	topics := map[string]string{
 		all:      "",
 		upcoming: "",
+	}
+
+	if len(events) > 0 {
+		events = sortEvents(events)
 	}
 
 	// Get all todays events
