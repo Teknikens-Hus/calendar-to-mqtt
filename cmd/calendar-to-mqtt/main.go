@@ -4,6 +4,10 @@ package main
 import (
 	"fmt"
 
+	"os"
+	"time"
+	_ "time/tzdata"
+
 	ics "github.com/Teknikens-Hus/calendar-to-mqtt/internal/calendars/ics"
 	"github.com/Teknikens-Hus/calendar-to-mqtt/internal/mqtt"
 	log "github.com/sirupsen/logrus"
@@ -26,6 +30,18 @@ func main() {
       ###       ############   ###     ##### ####       ###  ####  ###     ##### #############  ###       #### ############     ####       ###  ############## ############
       ###          ######      ###       ###  ###       ###  ####  ###       ###    ######      ###       ###     ######         ###       ###     ###### ###     ######                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
 	`)
+
+	// Manually update timezone from TZ env variable
+	if tz := os.Getenv("TZ"); tz != "" {
+		var err error
+		time.Local, err = time.LoadLocation(tz)
+		if err != nil {
+			log.Printf("error loading location '%s': %v\n", tz, err)
+		}
+	}
+
+	fmt.Printf("Timezone set to: %s\n", time.Local)
+	fmt.Printf("Current time: %s\n", time.Now().Format(time.RFC3339))
 
 	// Connect to the MQTT broker
 
