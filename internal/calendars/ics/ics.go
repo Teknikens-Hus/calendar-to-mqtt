@@ -15,12 +15,16 @@ import (
 func fetchAndParseICS(url string, start, end time.Time) (*gocal.Gocal, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("ICS: Failed to fetch URL: %w", err)
+		return nil, fmt.Errorf("failed to fetch URL: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("ICS: unexpected status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+	// Check if the content type is text/calendar, if its text/html the URL is probably wrong or expired
+	if contentType := resp.Header.Get("Content-Type"); contentType != "text/calendar; charset=utf-8" {
+		return nil, fmt.Errorf("unexpected content type: %s", contentType)
 	}
 
 	calendar := gocal.NewParser(resp.Body)
@@ -40,7 +44,7 @@ func fetchAndParseICS(url string, start, end time.Time) (*gocal.Gocal, error) {
 	calendar.Start, calendar.End = &start, &end
 	err = calendar.Parse()
 	if err != nil {
-		return nil, fmt.Errorf("ICS: Failed to parse calendar: %w", err)
+		return nil, fmt.Errorf("failed to parse calendar: %w", err)
 	}
 	return calendar, nil
 }
@@ -48,7 +52,7 @@ func fetchAndParseICS(url string, start, end time.Time) (*gocal.Gocal, error) {
 func getICSEvents(url string, start, end time.Time) ([]tools.CalendarEvent, error) {
 	calendar, err := fetchAndParseICS(url, start, end)
 	if err != nil {
-		return nil, fmt.Errorf("ICS: Failed to fetch and parse ICS: %w", err)
+		return nil, fmt.Errorf("failed to fetch and parse ICS: %w", err)
 	}
 	// Convert the gocal events to our own CalendarEvent struct
 	var events []tools.CalendarEvent
@@ -98,7 +102,7 @@ func SetupICS(client *mqtt.MQTTClient) {
 	fmt.Println("ICS: Start: ", start)
 	fmt.Println("ICS: End: ", end)
 
-	fmt.Println("ICS: Setting up ICS Events")
+	fmt.Printf("ICS: Setting up ICS %d Calendar(s) \n", len(*icsConf))
 	for _, ics := range *icsConf {
 		// Create a new ticker for each ICS
 		fmt.Println("ICS: Setting up ticker for ", ics.Name, " with interval ", ics.Interval, " seconds")
