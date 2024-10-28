@@ -58,9 +58,6 @@ func filterEventsToday(events []CalendarEvent) []CalendarEvent {
 			//fmt.Printf("Cal Tools: Added: %s \n Start Time: %s \n Reaccuring: %t \n UID: %s \n", event.Summary, event.Start, event.Reacurring, event.UID)
 		}
 	}
-	if todayEvents == nil {
-		fmt.Println("Cal Tools: No events for today errrr")
-	}
 	return todayEvents
 }
 
