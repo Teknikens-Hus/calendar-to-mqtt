@@ -66,6 +66,10 @@ func NewClient() (MQTTClient, error) {
 }
 
 func Publish(client MQTTClient, topic string, payload string, retain bool) {
+	if !client.paho.IsConnected() {
+		fmt.Println("MQTT: Not connected, skipping publish")
+		return
+	}
 	// Add clientID as prefix to topic
 	topic = client.ClientID + "/" + topic
 	token := client.paho.Publish(topic, byte(client.QoS), retain, payload)
