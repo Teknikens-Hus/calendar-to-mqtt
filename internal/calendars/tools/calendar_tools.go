@@ -26,6 +26,10 @@ type CalendarEvent struct {
 }
 
 func eventsToJSON(events []CalendarEvent) (string, error) {
+	if len(events) == 0 {
+		fmt.Println("Cal Tools: No events to convert to json")
+		return "[]", nil
+	}
 	var eventsData []EventData
 	for _, event := range events {
 		eventsData = append(eventsData, EventData{
@@ -53,6 +57,9 @@ func filterEventsToday(events []CalendarEvent) []CalendarEvent {
 			todayEvents = append(todayEvents, event)
 			//fmt.Printf("Cal Tools: Added: %s \n Start Time: %s \n Reaccuring: %t \n UID: %s \n", event.Summary, event.Start, event.Reacurring, event.UID)
 		}
+	}
+	if todayEvents == nil {
+		fmt.Println("Cal Tools: No events for today errrr")
 	}
 	return todayEvents
 }
