@@ -1,6 +1,8 @@
 # calendar-to-mqtt
 This program written in golang allows you to deploy a docker container/pod that scrapes/fetches data from supported calendars and publish them to MQTT topics for use in other systems, like ESPHome/Home Assistant.
 
+The program is intented to be used together with [esphome-mqtt-booking-display](https://github.com/Teknikens-Hus/esphome-mqtt-booking-display). But can be used for other purposes as well.
+
 ## Supported Calendars
 Currently, the following calendars are supported:
 - ICS
