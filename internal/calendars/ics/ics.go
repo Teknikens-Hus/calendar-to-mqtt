@@ -69,6 +69,19 @@ func getICSEvents(url string, start, end time.Time) ([]tools.CalendarEvent, erro
 	return events, nil
 }
 
+func GetMonthDateRange() (time.Time, time.Time) {
+	// Calculate the first and last day of the current month
+	now := time.Now()
+	firstDay := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	lastDay := firstDay.AddDate(0, 1, -1).Add(23*time.Hour + 59*time.Minute + 59*time.Second)
+
+	start := firstDay
+	end := lastDay
+	//fmt.Println("ICS: Start: ", start)
+	//fmt.Println("ICS: End: ", end)
+	return start, end
+}
+
 func SetupICS(client *mqtt.MQTTClient) {
 	icsConf, err := conf.GetICSConfig()
 	if err != nil {
@@ -80,16 +93,6 @@ func SetupICS(client *mqtt.MQTTClient) {
 		fmt.Println("ICS: No ICS configurations found in the config file")
 		return
 	}
-
-	// Calculate the first and last day of the current month
-	now := time.Now()
-	firstDay := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
-	lastDay := firstDay.AddDate(0, 1, -1).Add(23*time.Hour + 59*time.Minute + 59*time.Second)
-
-	start := firstDay
-	end := lastDay
-	fmt.Println("ICS: Start: ", start)
-	fmt.Println("ICS: End: ", end)
 
 	fmt.Printf("ICS: Setting up ICS %d Calendar(s) \n", len(*icsConf))
 	for _, ics := range *icsConf {
@@ -104,6 +107,7 @@ func SetupICS(client *mqtt.MQTTClient) {
 				select {
 				case <-ticker.C:
 					//fmt.Println("ICS: Ticker ticked at ", t)
+					start, end := GetMonthDateRange()
 					events, err := getICSEvents(ics.URL, start, end)
 					if err != nil {
 						log.Error("ICS: Error getting ICS events: ", err)
