@@ -50,6 +50,7 @@ func main() {
 		log.Fatalf("Error connecting to MQTT broker: %v", err)
 	}
 
+	fmt.Println()
 	ics.SetupICS(&mqttClient)
 
 	// Keep the application running
