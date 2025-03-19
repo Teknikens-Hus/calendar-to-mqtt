@@ -6,7 +6,7 @@ require (
 	github.com/apognu/gocal v0.9.1
 	github.com/eclipse/paho.mqtt.golang v1.5.0
 	github.com/sirupsen/logrus v1.9.3
-	gopkg.in/yaml.v3 v3.0.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
