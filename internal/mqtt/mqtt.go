@@ -20,6 +20,9 @@ func NewClient() (MQTTClient, error) {
 	opts := paho.NewClientOptions()
 	opts.AddBroker(mqttconf.ServerAddress)
 	opts.SetClientID(mqttconf.ClientID)
+	// Set a Last Will so broker announces unexpected disconnects
+	willTopic := mqttconf.ClientID + "/Status"
+	opts.SetWill(willTopic, "Disconnected", byte(mqttconf.QoS), true)
 
 	opts.SetOrderMatters(false)       // Allow out of order messages (use this option unless in order delivery is essential)
 	opts.ConnectTimeout = time.Second // Minimal delays on connect
@@ -75,4 +78,14 @@ func Publish(client MQTTClient, topic string, payload string, retain bool) {
 	token := client.paho.Publish(topic, byte(client.QoS), retain, payload)
 	token.Wait()
 	fmt.Printf("MQTT: Published %s to topic: %s\n", payload, topic)
+}
+
+// Disconnect gracefully from the MQTT broker
+func Disconnect(client MQTTClient) {
+	if client.paho == nil {
+		return
+	}
+	// Give a short timeout for in-flight messages
+	client.paho.Disconnect(250)
+	fmt.Println("MQTT: Disconnected")
 }

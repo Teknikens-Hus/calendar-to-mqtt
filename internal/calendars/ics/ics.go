@@ -1,6 +1,7 @@
 package ical
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -82,7 +83,7 @@ func GetMonthDateRange() (time.Time, time.Time) {
 	return start, end
 }
 
-func SetupICS(client *mqtt.MQTTClient) {
+func SetupICS(ctx context.Context, client *mqtt.MQTTClient) {
 	icsConf, err := conf.GetICSConfig()
 	if err != nil {
 		fmt.Println("ICS: Error setting up ICS: ", err)
@@ -102,21 +103,24 @@ func SetupICS(client *mqtt.MQTTClient) {
 		//defer ticker.Stop()
 
 		// Run scheduled task in a goroutine
-		go func() {
+		go func(name, url string, interval int) {
+			defer ticker.Stop()
 			for {
 				select {
+				case <-ctx.Done():
+					log.Infof("ICS: Stopping ticker for %s", name)
+					return
 				case <-ticker.C:
-					//fmt.Println("ICS: Ticker ticked at ", t)
 					start, end := GetMonthDateRange()
-					events, err := getICSEvents(ics.URL, start, end)
+					events, err := getICSEvents(url, start, end)
 					if err != nil {
 						log.Error("ICS: Error getting ICS events: ", err)
 					} else {
-						fmt.Printf("ICS: Found %d events in %s for date %s to %s \n", len(events), ics.Name, start.Format("2006-01-02"), end.Format("2006-01-02"))
-						tools.PublishCalendarEvents(*client, ics.Name, events)
+						fmt.Printf("ICS: Found %d events in %s for date %s to %s \n", len(events), name, start.Format("2006-01-02"), end.Format("2006-01-02"))
+						tools.PublishCalendarEvents(*client, name, events)
 					}
 				}
 			}
-		}()
+		}(ics.Name, ics.URL, ics.Interval)
 	}
 }

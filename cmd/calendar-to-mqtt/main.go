@@ -2,11 +2,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"os"
 	"time"
 	_ "time/tzdata"
+
+	"os/signal"
+	"syscall"
 
 	ics "github.com/Teknikens-Hus/calendar-to-mqtt/internal/calendars/ics"
 	"github.com/Teknikens-Hus/calendar-to-mqtt/internal/mqtt"
@@ -44,15 +48,23 @@ func main() {
 	fmt.Printf("Current time: %s\n", time.Now().Format(time.RFC3339))
 
 	// Connect to the MQTT broker
-
 	mqttClient, err := mqtt.NewClient()
 	if err != nil {
 		log.Fatalf("Error connecting to MQTT broker: %v", err)
 	}
 
-	fmt.Println()
-	ics.SetupICS(&mqttClient)
+	// Create a cancellable context tied to OS signals for graceful shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	// Keep the application running
-	select {}
+	fmt.Println()
+	ics.SetupICS(ctx, &mqttClient)
+
+	// Block until a termination signal is received
+	<-ctx.Done()
+
+	// Graceful shutdown: log and publish a shutdown status, then disconnect MQTT
+	log.Info("Shutting down calendar-to-mqtt...")
+	mqtt.Publish(mqttClient, "Status", "Shutting down", false)
+	mqtt.Disconnect(mqttClient)
 }
